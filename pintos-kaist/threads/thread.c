@@ -11,7 +11,7 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
-#include "fixed-point.h"
+// #include "threads/fixed-point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
