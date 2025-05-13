@@ -380,6 +380,8 @@ void thread_exit(void)
 #ifdef USERPROG
 	process_exit();
 #endif
+	struct thread *cur = thread_current();
+	list_remove(&cur->all_elem);
 
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
