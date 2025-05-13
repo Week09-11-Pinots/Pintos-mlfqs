@@ -1,3 +1,10 @@
+# .gitignore 파일 자체 무시
+.gitignore
+
+# pintos-kaist/threads/build 폴더와 그 하위 모든 파일, 폴더 무시
+pintos-kaist/threads/build/
+
+
 # Pintos 빌드 중간 파일 및 산출물
 *.o
 *.d
@@ -19,6 +26,9 @@
 /bin/
 /obj/
 /output/
+
+#vscode
+/.vscode/
 
 # core dump
 core
