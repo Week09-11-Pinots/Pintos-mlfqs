@@ -23,6 +23,7 @@
     "type_traits": "c",
     "typeinfo": "c",
     "algorithm": "c",
-    "fixed-point.h": "c"
+    "fixed-point.h": "c",
+    "interrupt.h": "c"
   }
 }
