@@ -27,8 +27,6 @@ pintos-kaist/threads/build/
 /obj/
 /output/
 
-#vscode
-/.vscode/
 
 # core dump
 core
