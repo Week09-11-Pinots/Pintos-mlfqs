@@ -209,18 +209,18 @@ void mlfqs_on_tick()
 {
 	update_recent_cpu();
 
-	if (timer_ticks() % 4 == 0)
-	{
-		update_priority(thread_current());
-		compare_cur_next_priority();
-	}
-
 	if (timer_ticks() % TIMER_FREQ == 0)
 	{
-		update_recent_cpu_all();
 		update_load_avg();
-		update_all_priority();
+		update_recent_cpu_all();
 	} // 모든 스레드 recent_cpu 계산
+
+	if (timer_ticks() % 4 == 0)
+	{
+		// update_priority(thread_current());
+		update_all_priority();
+		compare_cur_next_priority();
+	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

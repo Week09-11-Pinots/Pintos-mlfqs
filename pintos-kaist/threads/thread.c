@@ -246,18 +246,16 @@ void update_recent_cpu(void)
 다음 수식을 구현해야 합니다
 load_avg = (59/60) * load_avg + (1/60) * ready_threads_size
 */
-void update_load_avg()
+void update_load_avg(void)
 {
-	int ready_list_size = list_size(&ready_list);
+	int ready_threads = list_size(&ready_list);
 	if (thread_current() != idle_thread)
-		ready_list_size += 1;
+		ready_threads++;
 
-	fixed_t coeff_59_60 = div_fp_int(int_to_fp(59), 60);
-	fixed_t coeff_1_60 = div_fp_int(int_to_fp(1), 60);
+	fixed_t term1 = div_fp_int(mul_fp_int(load_avg, 59), 60); // (59 * load_avg) / 60
+	fixed_t term2 = mul_fp_int(div_fp_int(int_to_fp(1), 60), ready_threads);
 
-	load_avg = add_fp(
-		mul_fp(coeff_59_60, load_avg),
-		mul_fp_int(coeff_1_60, ready_list_size));
+	load_avg = add_fp(term1, term2);
 }
 
 /* 인자로 받은 스레드의 우선순위를 계산하는 함수입니다.
@@ -313,6 +311,7 @@ void update_all_priority(void)
 		struct thread *entry = list_entry(e, struct thread, all_elem);
 		if (entry->status == THREAD_DYING || entry == idle_thread)
 			continue;
+		update_priority(entry);
 	}
 	compare_cur_next_priority();
 }
