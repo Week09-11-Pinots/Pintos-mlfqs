@@ -204,6 +204,29 @@ static void wake_up(int64_t cur_tick)
 	}
 }
 
+void update_recent_cpu(void)
+{
+	thread_current()->recent_cpu = add_fp_int(thread_current()->recent_cpu, 1);
+}
+
+void update_all_priority(void)
+{
+}
+
+void mlfqs_on_tick() // thread_tick에 계산
+{
+	update_recent_cpu();
+
+	if (timer_ticks() % 4 == 0)
+		update_priority();
+
+	if (timer_ticks() % TIMER_FREQ == 0)
+	{
+		update_recent_cpu_all();
+		update_load_avg();
+	} // 모든 스레드 recent_cpu 계산
+}
+
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */
 static bool

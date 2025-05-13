@@ -5,6 +5,8 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "fixed-point.h"
+
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -152,6 +154,7 @@ int thread_get_load_avg(void);
 void update_priority(void);
 void update_all_priority(void);
 void update_recent_cpu(void);
+void update_recent_cpu_all(void);
 void update_load_avg(void);
 void mlfqs_on_tick(void);
 

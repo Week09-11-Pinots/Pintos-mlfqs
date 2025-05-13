@@ -11,6 +11,7 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "fixed-point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -222,6 +223,37 @@ tid_t thread_create(const char *name, int priority,
 		thread_yield();
 
 	return tid;
+}
+
+void update_load_avg()
+{
+	int ready_list_size = list_size(&ready_list);
+	if (thread_current() != idle_thread)
+		ready_list_size += 1;
+
+	fixed_t coeff_59_60 = div_fp_int(int_to_fp(59), 60);
+	fixed_t coeff_1_60 = div_fp_int(int_to_fp(1), 60);
+
+	load_avg = add_fp(
+		mul_fp(coeff_59_60, load_avg),
+		mul_fp_int(coeff_1_60, ready_list_size));
+}
+
+void update_priority(void) // 4틱마다 계산
+{
+	struct thread *t = thread_current();
+	if (t == idle_thread)
+		return;
+
+	int new_priority = PRI_MAX - fp_to_int_round(div_fp_int(t->recent_cpu, 4)) - (t->nice * 2);
+
+	// Clamp to [PRI_MIN, PRI_MAX]
+	if (new_priority > PRI_MAX)
+		new_priority = PRI_MAX;
+	if (new_priority < PRI_MIN)
+		new_priority = PRI_MIN;
+
+	t->priority = new_priority;
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled
@@ -482,9 +514,9 @@ init_thread(struct thread *t, const char *name, int priority)
 		if (t == initial_thread)
 		{
 			t->nice = 0;
-			//수정 필요
-			//t->recent_cpu = int_to_fp(0);
-			// 고정소수점이라
+			// 수정 필요
+			// t->recent_cpu = int_to_fp(0);
+			//  고정소수점이라
 			t->recent_cpu = 0;
 		}
 		else if (t != initial_thread)
