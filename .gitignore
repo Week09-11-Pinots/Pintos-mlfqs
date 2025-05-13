@@ -42,4 +42,4 @@ core.*
 .DS_Store
 *.swp
 *.swo
-.vscode/
+.vscode/*
