@@ -205,23 +205,28 @@ static void wake_up(int64_t cur_tick)
 }
 
 /* mlfqs에서 틱마다 발생하는 상황에 대응하기 위한 함수입니다 */
-void mlfqs_on_tick()
-{
-	update_recent_cpu();
+// void mlfqs_on_tick(void)
+// {
+// 	struct thread *cur = thread_current();
 
-	if (timer_ticks() % TIMER_FREQ == 0)
-	{
-		update_load_avg();
-		update_recent_cpu_all();
-	} // 모든 스레드 recent_cpu 계산
+// 	// Tick마다 실행 중인 스레드의 recent_cpu 증가
+// 	if (cur != idle_thread)
+// 		cur->recent_cpu = add_fp_int(cur->recent_cpu, 1);
 
-	if (timer_ticks() % 4 == 0)
-	{
-		// update_priority(thread_current());
-		update_all_priority();
-		compare_cur_next_priority();
-	}
-}
+// 	// 매 1초마다 load_avg 갱신 → recent_cpu 갱신
+// 	if (timer_ticks() % TIMER_FREQ == 0)
+// 	{
+// 		update_load_avg();
+// 		update_recent_cpu_all();
+// 	}
+
+// 	// 매 4tick마다 모든 스레드의 priority 재계산
+// 	if (timer_ticks() % 4 == 0)
+// 	{
+// 		update_all_priority();
+// 		compare_cur_next_priority();
+// 	}
+// }
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */

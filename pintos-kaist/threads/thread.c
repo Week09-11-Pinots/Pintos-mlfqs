@@ -16,6 +16,8 @@
 #include "userprog/process.h"
 #endif
 
+#define TIMER_FREQ 100
+
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -246,17 +248,43 @@ void update_recent_cpu(void)
 다음 수식을 구현해야 합니다
 load_avg = (59/60) * load_avg + (1/60) * ready_threads_size
 */
-void update_load_avg(void)
+void update_load_avg()
 {
-	int ready_threads = list_size(&ready_list);
+	int ready_list_size = list_size(&ready_list);
 	if (thread_current() != idle_thread)
-		ready_threads++;
+		ready_list_size += 1;
 
-	fixed_t term1 = div_fp_int(mul_fp_int(load_avg, 59), 60); // (59 * load_avg) / 60
-	fixed_t term2 = mul_fp_int(div_fp_int(int_to_fp(1), 60), ready_threads);
+	fixed_t coeff_59_60 = div_fp_int(int_to_fp(59), 60);
+	fixed_t coeff_1_60 = div_fp_int(int_to_fp(1), 60);
 
-	load_avg = add_fp(term1, term2);
+	load_avg = add_fp(
+		mul_fp(coeff_59_60, load_avg),
+		mul_fp_int(coeff_1_60, ready_list_size));
 }
+
+void mlfqs_on_tick(void)
+{
+	struct thread *cur = thread_current();
+
+	// Tick마다 실행 중인 스레드의 recent_cpu 증가
+	if (cur != idle_thread)
+		cur->recent_cpu = add_fp_int(cur->recent_cpu, 1);
+
+	// 매 1초마다 load_avg 갱신 → recent_cpu 갱신
+	if (timer_ticks() % TIMER_FREQ == 0)
+	{
+		update_load_avg();
+		update_recent_cpu_all();
+	}
+
+	// 매 4tick마다 모든 스레드의 priority 재계산
+	if (timer_ticks() % 4 == 0)
+	{
+		update_all_priority();
+		compare_cur_next_priority();
+	}
+}
+
 
 /* 인자로 받은 스레드의 우선순위를 계산하는 함수입니다.
 모든 스레드 업데이트에서 사용하기위해 인자를 void 에서 thread로 수정했습니다 */
@@ -311,7 +339,7 @@ void update_all_priority(void)
 		struct thread *entry = list_entry(e, struct thread, all_elem);
 		if (entry->status == THREAD_DYING || entry == idle_thread)
 			continue;
-		update_priority(entry);
+			update_priority(entry);
 	}
 	compare_cur_next_priority();
 }
