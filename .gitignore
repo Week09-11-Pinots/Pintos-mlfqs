@@ -27,6 +27,8 @@
 *.expected
 *.tests
 *.log
+*.o
+*.errors
 
 # GDB and debugger files
 *.gdb
