@@ -1,34 +1,48 @@
-# Pintos 빌드 중간 파일 및 산출물
-*.o
-*.d
+# Build artifacts
+/build/
+/*.o
+/*.d
+/*.so
+/*.a
 *.out
-*.bin
 *.elf
 *.img
+*.bin
 *.map
-*.lst
-*.log
+*.sym
 *.qemu
-*.raw
-*.hex
-*.dis
+*.qemu.log
+*.qemu.out
 *.dump
+*.disasm
 
-# 빌드 디렉터리
-/build/
-/bin/
-/obj/
-/output/
+# Pintos disk images
+*.dsk
+*.fsf
+*.fsd
 
+# Test results
+*.result
+*.output
+*.expected
+*.tests
+*.log
+*.o
+*.errors
 
-/.vscode/
+# GDB and debugger files
+*.gdb
+*.gdbinit
 
-# core dump
+# Core dumps
 core
+core.*
 
-# 임시 파일
+# Editor/OS junk
 *~
-*.swp
-
-# macOS
+\#*\#
 .DS_Store
+*.swp
+*.swo
+.vscode/
+.vscode/*
