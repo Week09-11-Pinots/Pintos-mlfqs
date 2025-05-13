@@ -246,18 +246,16 @@ void update_recent_cpu(void)
 다음 수식을 구현해야 합니다
 load_avg = (59/60) * load_avg + (1/60) * ready_threads_size
 */
-void update_load_avg()
+void update_load_avg(void)
 {
-	int ready_list_size = list_size(&ready_list);
+	int ready_threads = list_size(&ready_list);
 	if (thread_current() != idle_thread)
-		ready_list_size += 1;
+		ready_threads++;
 
-	fixed_t coeff_59_60 = div_fp_int(int_to_fp(59), 60);
-	fixed_t coeff_1_60 = div_fp_int(int_to_fp(1), 60);
+	fixed_t term1 = div_fp_int(mul_fp_int(load_avg, 59), 60); // (59 * load_avg) / 60
+	fixed_t term2 = mul_fp_int(div_fp_int(int_to_fp(1), 60), ready_threads);
 
-	load_avg = add_fp(
-		mul_fp(coeff_59_60, load_avg),
-		mul_fp_int(coeff_1_60, ready_list_size));
+	load_avg = add_fp(term1, term2);
 }
 
 /* 인자로 받은 스레드의 우선순위를 계산하는 함수입니다.
@@ -313,6 +311,7 @@ void update_all_priority(void)
 		struct thread *entry = list_entry(e, struct thread, all_elem);
 		if (entry->status == THREAD_DYING || entry == idle_thread)
 			continue;
+		update_priority(entry);
 	}
 	compare_cur_next_priority();
 }
@@ -470,7 +469,12 @@ void compare_cur_next_priority(void)
 	list_sort(&ready_list, compare_priority, NULL);
 	struct thread *next = list_entry(list_front(&ready_list), struct thread, elem);
 	if (next->priority > thread_current()->priority)
-		thread_yield();
+	{
+		if (intr_context())
+			intr_yield_on_return();
+		else
+			thread_yield();
+	}
 }
 
 /* Returns the current thread's priority. */
@@ -483,14 +487,13 @@ int thread_get_priority(void)
 void thread_set_nice(int nice UNUSED)
 {
 	struct thread *cur = thread_current();
-	cur->nice=nice;
+	cur->nice = nice;
 
-	//nice값이 바뀌었으니 priority도 다시 계산함
+	// nice값이 바뀌었으니 priority도 다시 계산함
 	update_priority(cur);
 
-	//만약 ready_list에 더 높은 priority가 있으면 양보
+	// 만약 ready_list에 더 높은 priority가 있으면 양보
 	compare_cur_next_priority();
-	
 }
 
 /* Returns the current thread's nice value. */
@@ -502,13 +505,13 @@ int thread_get_nice(void)
 /* Returns 100 times the system load average. */
 int thread_get_load_avg(void)
 {
-	return fp_to_int_round(load_avg*100);
+	return fp_to_int_round(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
-	return fp_to_int_round(thread_current()->recent_cpu *100);
+	return fp_to_int_round(thread_current()->recent_cpu * 100);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
