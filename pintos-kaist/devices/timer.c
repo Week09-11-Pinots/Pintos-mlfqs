@@ -207,10 +207,13 @@ static void wake_up(int64_t cur_tick)
 /* mlfqs에서 틱마다 발생하는 상황에 대응하기 위한 함수입니다 */
 void mlfqs_on_tick()
 {
-	update_recent_cpu(thread_current());
+	update_recent_cpu();
 
 	if (timer_ticks() % 4 == 0)
+	{
 		update_priority(thread_current());
+		compare_cur_next_priority();
+	}
 
 	if (timer_ticks() % TIMER_FREQ == 0)
 	{
