@@ -270,7 +270,10 @@ void update_priority(struct thread *thread) // 4틱마다 계산
 mlfqs_on_tick에서 사용되어야 합니다 */
 void update_recent_cpu_all(void)
 {
-	// TODO : 모든 리스트 순회하며 update_recent_cpu 호출
+	/* TODO :
+	recent_cpu = (2 * load_avg) / (2 * load_avg + 1) * recent_cpu + nice
+	와 같은 계산식을 사용하여 CPU 점유율을 다시 계산해야 합니다
+	*/
 }
 
 /* 모든 스레드의 우선순위를 계산하는 함수입니다.
