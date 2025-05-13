@@ -207,7 +207,7 @@ tid_t thread_create(const char *name, int priority,
 
 	// MLFQS가 활성화되어 있다면, 새 스레드의 priority를 자동 계산해줌
 	if (thread_mlfqs){
-		t->priority = calculate_priority(t);  // recent_cpu, nice 기반으로 계산
+		update_priority(t);  // recent_cpu, nice 기반으로 계산
 	}
 
 	tid = t->tid = allocate_tid();
