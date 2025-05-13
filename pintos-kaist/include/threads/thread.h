@@ -5,6 +5,8 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/fixed-point.h"
+
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -100,7 +102,8 @@ struct thread
 	struct lock *pending_lock;
 
 	int nice;		// 양보하려는 정도?
-	int recent_cpu; // CPU를 얼마나 점유했나?
+	fixed_t recent_cpu; // CPU를 얼마나 점유했나?
+	struct list_elem all_elem;
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -149,9 +152,10 @@ void thread_set_nice(int);
 int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
 
-void update_priority(void);
+void update_priority(struct thread *);
 void update_all_priority(void);
-void update_recent_cpu(void);
+void update_recent_cpu(struct thread *);
+void update_recent_cpu_all(void);
 void update_load_avg(void);
 void mlfqs_on_tick(void);
 
