@@ -237,10 +237,9 @@ tid_t thread_create(const char *name, int priority,
 
 /* 인자로 받은 스레드의 recent_cpu를 수정하는 함수입니다.
 모든 스레드 업데이트에서 사용하기 위해 인자를 void를 thread로 수정했습니다 */
-void update_recent_cpu(struct thread *thread)
+void update_recent_cpu(void)
 {
-	if (thread != idle_thread)
-		thread->recent_cpu = add_fp_int(thread->recent_cpu, 1);
+	thread_current()->recent_cpu = add_fp_int(thread_current()->recent_cpu, 1);
 }
 
 /* load_avg를 계산하는 함수입니다. mlfqs_on_tick에서 1초마다 호출되어야 합니다
@@ -277,8 +276,6 @@ void update_priority(struct thread *thread) // 4틱마다 계산
 		new_priority = PRI_MIN;
 
 	thread->priority = new_priority;
-
-	compare_cur_next_priority(); // 레디 리스트 재정렬하고 스케줄링
 }
 
 /* 모든 스레드의 CPU 점유율을 계산하는 함수입니다.
@@ -316,8 +313,8 @@ void update_all_priority(void)
 		struct thread *entry = list_entry(e, struct thread, all_elem);
 		if (entry->status == THREAD_DYING || entry == idle_thread)
 			continue;
-		update_priority(entry);
 	}
+	compare_cur_next_priority();
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled
@@ -469,12 +466,9 @@ void compare_cur_next_priority(void)
 	}
 
 	list_sort(&ready_list, compare_priority, NULL);
-	struct list_elem *e = list_front(&ready_list);
-
-	if (compare_priority(e, &thread_current()->priority, NULL))
-	{
+	struct thread *next = list_entry(list_front(&ready_list), struct thread, elem);
+	if (next->priority > thread_current()->priority)
 		thread_yield();
-	}
 }
 
 /* Returns the current thread's priority. */

@@ -101,7 +101,7 @@ struct thread
 	struct list donations; /* 자신한테 기부해준 리스트 */
 	struct lock *pending_lock;
 
-	int nice;		// 양보하려는 정도?
+	int nice;			// 양보하려는 정도?
 	fixed_t recent_cpu; // CPU를 얼마나 점유했나?
 	struct list_elem all_elem;
 
@@ -154,7 +154,7 @@ int thread_get_load_avg(void);
 
 void update_priority(struct thread *);
 void update_all_priority(void);
-void update_recent_cpu(struct thread *);
+void update_recent_cpu(void);
 void update_recent_cpu_all(void);
 void update_load_avg(void);
 void mlfqs_on_tick(void);
