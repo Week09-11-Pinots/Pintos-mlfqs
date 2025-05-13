@@ -264,6 +264,8 @@ void update_priority(struct thread *thread) // 4틱마다 계산
 		new_priority = PRI_MIN;
 
 	thread->priority = new_priority;
+
+	compare_cur_next_priority(); // 레디 리스트 재정렬하고 스케줄링
 }
 
 /* 모든 스레드의 CPU 점유율을 계산하는 함수입니다.
