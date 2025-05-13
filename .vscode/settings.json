@@ -23,6 +23,6 @@
     "type_traits": "c",
     "typeinfo": "c",
     "algorithm": "c",
-    "palloc.h": "c"
+    "fixed-point.h": "c"
   }
 }
