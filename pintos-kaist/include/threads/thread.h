@@ -155,7 +155,7 @@ int thread_get_load_avg(void);
 void update_priority(struct thread *);
 void update_all_priority(void);
 void update_recent_cpu(struct thread *);
-void update_recent_cpu_all(struct thread *);
+void update_recent_cpu_all(void);
 void update_load_avg(void);
 void mlfqs_on_tick(void);
 
