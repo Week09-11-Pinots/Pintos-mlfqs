@@ -225,6 +225,15 @@ tid_t thread_create(const char *name, int priority,
 	return tid;
 }
 
+/* 인자로 받은 스레드의 recent_cpu를 수정하는 함수입니다.
+모든 스레드 업데이트에서 사용하기 위해 인자를 void를 thread로 수정했습니다 */
+void update_recent_cpu(struct thread *thread)
+{
+	if (thread != idle_thread)
+		thread->recent_cpu = add_fp_int(thread->recent_cpu, 1);
+}
+
+/* load_avg를 계산하는 함수입니다. mlfqs_on_tick에서 1초마다 호출되어야 합니다 */
 void update_load_avg()
 {
 	int ready_list_size = list_size(&ready_list);
@@ -239,13 +248,14 @@ void update_load_avg()
 		mul_fp_int(coeff_1_60, ready_list_size));
 }
 
-void update_priority(void) // 4틱마다 계산
+/* 인자로 받은 스레드의 우선순위를 계산하는 함수입니다.
+모든 스레드 업데이트에서 사용하기위해 인자를 void 에서 thread로 수정했습니다 */
+void update_priority(struct thread *thread) // 4틱마다 계산
 {
-	struct thread *t = thread_current();
-	if (t == idle_thread)
+	if (thread == idle_thread)
 		return;
 
-	int new_priority = PRI_MAX - fp_to_int_round(div_fp_int(t->recent_cpu, 4)) - (t->nice * 2);
+	int new_priority = PRI_MAX - fp_to_int_round(div_fp_int(thread->recent_cpu, 4)) - (thread->nice * 2);
 
 	// Clamp to [PRI_MIN, PRI_MAX]
 	if (new_priority > PRI_MAX)
@@ -253,7 +263,21 @@ void update_priority(void) // 4틱마다 계산
 	if (new_priority < PRI_MIN)
 		new_priority = PRI_MIN;
 
-	t->priority = new_priority;
+	thread->priority = new_priority;
+}
+
+/* 모든 스레드의 CPU 점유율을 계산하는 함수입니다.
+mlfqs_on_tick에서 사용되어야 합니다 */
+void update_recent_cpu_all(void)
+{
+	// TODO : 모든 리스트 순회하며 update_recent_cpu 호출
+}
+
+/* 모든 스레드의 우선순위를 계산하는 함수입니다.
+mlfqs_on_tick에서 사용되어야 합니다 */
+void update_all_priority(void)
+{
+	// TODO : 모든 리스트 순회하며 update_priority 호출
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled

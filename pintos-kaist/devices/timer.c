@@ -204,26 +204,19 @@ static void wake_up(int64_t cur_tick)
 	}
 }
 
-void update_recent_cpu(void)
+/* mlfqs에서 틱마다 발생하는 상황에 대응하기 위한 함수입니다 */
+void mlfqs_on_tick()
 {
-	thread_current()->recent_cpu = add_fp_int(thread_current()->recent_cpu, 1);
-}
-
-void update_all_priority(void)
-{
-}
-
-void mlfqs_on_tick() // thread_tick에 계산
-{
-	update_recent_cpu();
+	update_recent_cpu(thread_current());
 
 	if (timer_ticks() % 4 == 0)
-		update_priority();
+		update_priority(thread_current());
 
 	if (timer_ticks() % TIMER_FREQ == 0)
 	{
 		update_recent_cpu_all();
 		update_load_avg();
+		update_all_priority();
 	} // 모든 스레드 recent_cpu 계산
 }
 
