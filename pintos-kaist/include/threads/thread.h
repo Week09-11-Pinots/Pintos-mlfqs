@@ -142,12 +142,18 @@ void thread_yield(void);
 
 int thread_get_priority(void);
 void thread_set_priority(int);
+void compare_cur_next_priority(void);
 
 int thread_get_nice(void);
 void thread_set_nice(int);
 int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
-void compare_cur_next_priority(void);
+
+void update_priority(void);
+void update_all_priority(void);
+void update_recent_cpu(void);
+void update_load_avg(void);
+void mlfqs_on_tick(void);
 
 void do_iret(struct intr_frame *tf);
 
