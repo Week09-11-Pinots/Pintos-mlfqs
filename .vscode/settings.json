@@ -24,6 +24,7 @@
     "typeinfo": "c",
     "algorithm": "c",
     "fixed-point.h": "c",
-    "interrupt.h": "c"
+    "interrupt.h": "c",
+    "stdint.h": "c"
   }
 }
