@@ -53,6 +53,7 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+static struct list all_list;
 
 static void kernel_thread(thread_func *, void *aux);
 
@@ -112,6 +113,8 @@ void thread_init(void)
 	lock_init(&tid_lock);
 	list_init(&ready_list);
 	list_init(&destruction_req);
+	list_init(&all_list);
+
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -152,6 +155,10 @@ void thread_tick(void)
 	else
 		kernel_ticks++;
 
+	// 매 timer tick마다 MLFQS 업데이트 트리거
+	if (thread_mlfqs){
+		mlfqs_on_tick();  // running thread의 recent_cpu++, 주기적 갱신 처리
+	}
 	/* Enforce preemption. */
 	if (++thread_ticks >= TIME_SLICE)
 		intr_yield_on_return();
@@ -196,10 +203,12 @@ tid_t thread_create(const char *name, int priority,
 	init_thread(t, name, priority);
 
 	// 2. 고급 스케줄러가 켜져 있다면:
-	// if (mlfqs)
-	// {
-	// 	t->priority = calculate_priority(t);
-	// }
+
+	// MLFQS가 활성화되어 있다면, 새 스레드의 priority를 자동 계산해줌
+	if (thread_mlfqs){
+		t->priority = calculate_priority(t);  // recent_cpu, nice 기반으로 계산
+	}
+
 	tid = t->tid = allocate_tid();
 
 	/* Call the kernel_thread if it scheduled.
@@ -341,6 +350,11 @@ void thread_yield(void)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
+	// 고급 스케줄러에서는 priority를 수동으로 설정할 수 없기 때문에 무시
+	if (thread_mlfqs)
+		return;
+
+// (기존 donation 처리 등은 기본 스케줄러일 때만 유효)
 	struct thread *cur = thread_current();
 	thread_current()->original_priority = new_priority;
 
@@ -481,20 +495,23 @@ init_thread(struct thread *t, const char *name, int priority)
 	{
 		if (t == initial_thread)
 		{
+			// 최초 스레드는 기본값으로 초기화
 			t->nice = 0;
-			//수정 필요
-			//t->recent_cpu = int_to_fp(0);
-			// 고정소수점이라
-			t->recent_cpu = 0;
+			t->recent_cpu = int_to_fp(0);
+
 		}
 		else if (t != initial_thread)
 		{
+        	// 새로 생성되는 스레드는 부모(현재 스레드)의 값을 상속받음
 			t->nice = thread_current()->nice;
 			t->recent_cpu = thread_current()->recent_cpu;
 		}
 	}
 
 	list_init(&t->donations);
+	list_push_back(&all_list, &t->all_elem);
+
+
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
