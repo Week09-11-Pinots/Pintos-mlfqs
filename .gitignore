@@ -25,7 +25,6 @@
 *.result
 *.output
 *.expected
-*.tests
 *.log
 *.o
 *.errors
