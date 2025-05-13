@@ -20,6 +20,9 @@
 /obj/
 /output/
 
+
+/.vscode/
+
 # core dump
 core
 
