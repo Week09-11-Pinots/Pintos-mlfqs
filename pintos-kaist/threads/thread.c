@@ -194,6 +194,12 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Initialize thread. */
 	init_thread(t, name, priority);
+
+	// 2. 고급 스케줄러가 켜져 있다면:
+	// if (mlfqs)
+	// {
+	// 	t->priority = calculate_priority(t);
+	// }
 	tid = t->tid = allocate_tid();
 
 	/* Call the kernel_thread if it scheduled.
@@ -476,6 +482,9 @@ init_thread(struct thread *t, const char *name, int priority)
 		if (t == initial_thread)
 		{
 			t->nice = 0;
+			//수정 필요
+			//t->recent_cpu = int_to_fp(0);
+			// 고정소수점이라
 			t->recent_cpu = 0;
 		}
 		else if (t != initial_thread)
