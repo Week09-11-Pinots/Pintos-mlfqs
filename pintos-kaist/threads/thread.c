@@ -83,7 +83,7 @@ static uint64_t gdt[3] = {0,
 						  0x00af9a000000ffff,
 						  0x00cf92000000ffff};
 
-int64_t load_avg = 0;
+fixed_t load_avg = 0;
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -115,7 +115,6 @@ void thread_init(void)
 	list_init(&ready_list);
 	list_init(&destruction_req);
 	list_init(&all_list);
-
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -157,8 +156,9 @@ void thread_tick(void)
 		kernel_ticks++;
 
 	// 매 timer tick마다 MLFQS 업데이트 트리거
-	if (thread_mlfqs){
-		mlfqs_on_tick();  // running thread의 recent_cpu++, 주기적 갱신 처리
+	if (thread_mlfqs)
+	{
+		mlfqs_on_tick(); // running thread의 recent_cpu++, 주기적 갱신 처리
 	}
 	/* Enforce preemption. */
 	if (++thread_ticks >= TIME_SLICE)
@@ -206,8 +206,9 @@ tid_t thread_create(const char *name, int priority,
 	// 2. 고급 스케줄러가 켜져 있다면:
 
 	// MLFQS가 활성화되어 있다면, 새 스레드의 priority를 자동 계산해줌
-	if (thread_mlfqs){
-		update_priority(t);  // recent_cpu, nice 기반으로 계산
+	if (thread_mlfqs)
+	{
+		update_priority(t); // recent_cpu, nice 기반으로 계산
 	}
 
 	tid = t->tid = allocate_tid();
@@ -236,13 +237,15 @@ tid_t thread_create(const char *name, int priority,
 
 /* 인자로 받은 스레드의 recent_cpu를 수정하는 함수입니다.
 모든 스레드 업데이트에서 사용하기 위해 인자를 void를 thread로 수정했습니다 */
-void update_recent_cpu(struct thread *thread)
+void update_recent_cpu(void)
 {
-	if (thread != idle_thread)
-		thread->recent_cpu = add_fp_int(thread->recent_cpu, 1);
+	thread_current()->recent_cpu = add_fp_int(thread_current()->recent_cpu, 1);
 }
 
-/* load_avg를 계산하는 함수입니다. mlfqs_on_tick에서 1초마다 호출되어야 합니다 */
+/* load_avg를 계산하는 함수입니다. mlfqs_on_tick에서 1초마다 호출되어야 합니다
+다음 수식을 구현해야 합니다
+load_avg = (59/60) * load_avg + (1/60) * ready_threads_size
+*/
 void update_load_avg()
 {
 	int ready_list_size = list_size(&ready_list);
@@ -273,8 +276,6 @@ void update_priority(struct thread *thread) // 4틱마다 계산
 		new_priority = PRI_MIN;
 
 	thread->priority = new_priority;
-
-	compare_cur_next_priority(); // 레디 리스트 재정렬하고 스케줄링
 }
 
 /* 모든 스레드의 CPU 점유율을 계산하는 함수입니다.
@@ -285,6 +286,20 @@ void update_recent_cpu_all(void)
 	recent_cpu = (2 * load_avg) / (2 * load_avg + 1) * recent_cpu + nice
 	와 같은 계산식을 사용하여 CPU 점유율을 다시 계산해야 합니다
 	*/
+	struct list_elem *e;
+	for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
+	{
+		struct thread *entry = list_entry(e, struct thread, all_elem);
+		if (entry->status == THREAD_DYING || entry == idle_thread)
+			continue;
+		fixed_t coeff = div_fp(
+			mul_fp_int(load_avg, 2),
+			add_fp_int(mul_fp_int(load_avg, 2), 1));
+
+		entry->recent_cpu = add_fp(
+			mul_fp(coeff, entry->recent_cpu),
+			int_to_fp(entry->nice));
+	}
 }
 
 /* 모든 스레드의 우선순위를 계산하는 함수입니다.
@@ -292,6 +307,14 @@ mlfqs_on_tick에서 사용되어야 합니다 */
 void update_all_priority(void)
 {
 	// TODO : 모든 리스트 순회하며 update_priority 호출
+	struct list_elem *e;
+	for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
+	{
+		struct thread *entry = list_entry(e, struct thread, all_elem);
+		if (entry->status == THREAD_DYING || entry == idle_thread)
+			continue;
+	}
+	compare_cur_next_priority();
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled
@@ -380,6 +403,8 @@ void thread_exit(void)
 #ifdef USERPROG
 	process_exit();
 #endif
+	struct thread *cur = thread_current();
+	list_remove(&cur->all_elem);
 
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
@@ -415,7 +440,7 @@ void thread_set_priority(int new_priority)
 	if (thread_mlfqs)
 		return;
 
-// (기존 donation 처리 등은 기본 스케줄러일 때만 유효)
+	// (기존 donation 처리 등은 기본 스케줄러일 때만 유효)
 	struct thread *cur = thread_current();
 	thread_current()->original_priority = new_priority;
 
@@ -443,12 +468,9 @@ void compare_cur_next_priority(void)
 	}
 
 	list_sort(&ready_list, compare_priority, NULL);
-	struct list_elem *e = list_front(&ready_list);
-
-	if (compare_priority(e, &thread_current()->priority, NULL))
-	{
+	struct thread *next = list_entry(list_front(&ready_list), struct thread, elem);
+	if (next->priority > thread_current()->priority)
 		thread_yield();
-	}
 }
 
 /* Returns the current thread's priority. */
@@ -564,11 +586,10 @@ init_thread(struct thread *t, const char *name, int priority)
 			// 최초 스레드는 기본값으로 초기화
 			t->nice = 0;
 			t->recent_cpu = int_to_fp(0);
-
 		}
 		else if (t != initial_thread)
 		{
-        	// 새로 생성되는 스레드는 부모(현재 스레드)의 값을 상속받음
+			// 새로 생성되는 스레드는 부모(현재 스레드)의 값을 상속받음
 			t->nice = thread_current()->nice;
 			t->recent_cpu = thread_current()->recent_cpu;
 		}
@@ -576,8 +597,6 @@ init_thread(struct thread *t, const char *name, int priority)
 
 	list_init(&t->donations);
 	list_push_back(&all_list, &t->all_elem);
-
-
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
