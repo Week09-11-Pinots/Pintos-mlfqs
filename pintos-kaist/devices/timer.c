@@ -204,6 +204,22 @@ static void wake_up(int64_t cur_tick)
 	}
 }
 
+/* mlfqs에서 틱마다 발생하는 상황에 대응하기 위한 함수입니다 */
+void mlfqs_on_tick()
+{
+	update_recent_cpu(thread_current());
+
+	if (timer_ticks() % 4 == 0)
+		update_priority(thread_current());
+
+	if (timer_ticks() % TIMER_FREQ == 0)
+	{
+		update_recent_cpu_all();
+		update_load_avg();
+		update_all_priority();
+	} // 모든 스레드 recent_cpu 계산
+}
+
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */
 static bool

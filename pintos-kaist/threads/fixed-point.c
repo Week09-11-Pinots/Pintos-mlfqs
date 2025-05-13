@@ -4,7 +4,7 @@
 #include <stdint.h> // int64_t 사용
 
 // 변환
-int int_to_fp(int n)
+fixed_t int_to_fp(int n)
 {
     return n * F;
 }
@@ -20,43 +20,43 @@ int fp_to_int_round(int x)
 }
 
 // 기본 연산
-int add_fp(int x, int y)
+fixed_t add_fp(int x, int y)
 {
     return x + y;
 }
 
-int sub_fp(int x, int y)
+fixed_t sub_fp(int x, int y)
 {
     return x - y;
 }
 
-int add_fp_int(int x, int n)
+fixed_t add_fp_int(int x, int n)
 {
     return x + n * F;
 }
 
-int sub_fp_int(int x, int n)
+fixed_t sub_fp_int(int x, int n)
 {
     return x - n * F;
 }
 
 // 곱셈 / 나눗셈
-int mul_fp(int x, int y)
+fixed_t mul_fp(int x, int y)
 {
     return ((int64_t)x) * y / F;
 }
 
-int mul_fp_int(int x, int n)
+fixed_t mul_fp_int(int x, int n)
 {
     return x * n;
 }
 
-int div_fp(int x, int y)
+fixed_t div_fp(int x, int y)
 {
     return ((int64_t)x) * F / y;
 }
 
-int div_fp_int(int x, int n)
+fixed_t div_fp_int(int x, int n)
 {
     return x / n;
 }
