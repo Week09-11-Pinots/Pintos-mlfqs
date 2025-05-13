@@ -470,7 +470,12 @@ void compare_cur_next_priority(void)
 	list_sort(&ready_list, compare_priority, NULL);
 	struct thread *next = list_entry(list_front(&ready_list), struct thread, elem);
 	if (next->priority > thread_current()->priority)
-		thread_yield();
+	{
+		if (intr_context())
+			intr_yield_on_return();
+		else
+			thread_yield();
+	}
 }
 
 /* Returns the current thread's priority. */
@@ -483,14 +488,13 @@ int thread_get_priority(void)
 void thread_set_nice(int nice UNUSED)
 {
 	struct thread *cur = thread_current();
-	cur->nice=nice;
+	cur->nice = nice;
 
-	//nice값이 바뀌었으니 priority도 다시 계산함
+	// nice값이 바뀌었으니 priority도 다시 계산함
 	update_priority(cur);
 
-	//만약 ready_list에 더 높은 priority가 있으면 양보
+	// 만약 ready_list에 더 높은 priority가 있으면 양보
 	compare_cur_next_priority();
-	
 }
 
 /* Returns the current thread's nice value. */
@@ -502,13 +506,13 @@ int thread_get_nice(void)
 /* Returns 100 times the system load average. */
 int thread_get_load_avg(void)
 {
-	return fp_to_int_round(load_avg*100);
+	return fp_to_int_round(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
-	return fp_to_int_round(thread_current()->recent_cpu *100);
+	return fp_to_int_round(thread_current()->recent_cpu * 100);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
